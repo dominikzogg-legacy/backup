@@ -92,17 +92,45 @@ class Backup
         {
             $this->_throwException('Empty array given');
         }
-        foreach($arrPaths as $strPath)
+        foreach($arrPaths as $strPath => $arrToIgnorePaths)
         {
-            // stop if the folder not exists
-            if(!is_dir($strPath))
+            // there are paths to ignore
+            if(is_array($arrToIgnorePaths))
             {
-                $this->_throwException("The folder path {$strPath} does not exists");
+                // stop if the folder not exists
+                if(!is_dir($strPath))
+                {
+                    $this->_throwException("The folder path {$strPath} does not exists");
+                }
+
+                // add path if its not allready exists
+                if(!isset($this->_arrFoldersToBackup[$strPath]))
+                {
+                    $this->_arrFoldersToBackup[$strPath] = array();
+                }
+
+                // add ignore paths
+                foreach($arrToIgnorePaths as $strToIgnorePath)
+                {
+                    if(!in_array($strToIgnorePath, $this->_arrFoldersToBackup[$strPath]))
+                    {
+                        $this->_arrFoldersToBackup[$strPath][] = $strToIgnorePath;
+                    }
+                }
             }
-            // add path if its not allready exists
-            if(!in_array($strPath, $this->_arrFoldersToBackup))
+            else
             {
-                $this->_arrFoldersToBackup[] = $strPath;
+                // stop if the folder not exists
+                if(!is_dir($arrToIgnorePaths))
+                {
+                    $this->_throwException("The folder path {$arrToIgnorePaths} does not exists");
+                }
+
+                // add path if its not allready exists
+                if(!isset($this->_arrFoldersToBackup[$arrToIgnorePaths]))
+                {
+                    $this->_arrFoldersToBackup[$arrToIgnorePaths] = array();
+                }
             }
         }
         return($this);
@@ -260,7 +288,7 @@ class Backup
     protected function _backupFolders()
     {
         // foreach to backup folder
-        foreach($this->_arrFoldersToBackup as $strSourcePath)
+        foreach($this->_arrFoldersToBackup as $strSourcePath => $arrToIgnorePaths)
         {
             // destination path
             $strDestinationPath = $this->_strFolderPath . '/' . $this->_strDateToday . $strSourcePath . '/';
@@ -268,8 +296,18 @@ class Backup
             // create desination folder
             $this->_createFolder($strDestinationPath);
 
+            // create ignore path string
+            $strToIgnorePathRsync = '';
+            foreach($arrToIgnorePaths as $strToIgnorePath)
+            {
+                $strToIgnorePathRsync .= "--exclude '{$strToIgnorePath}' ";
+            }
+
             // rsync command
-            $strRsyncCommand = "rsync -a --delete {$strSourcePath}/* {$strDestinationPath}";
+            $strRsyncCommand = "rsync --recursive --links --perms --times --owner --group --delete {$strToIgnorePathRsync} {$strSourcePath}/* {$strDestinationPath}";
+
+            // print command
+            print($strRsyncCommand . "\n");
 
             // add command to log
             $this->_arrLog[] = $strRsyncCommand;

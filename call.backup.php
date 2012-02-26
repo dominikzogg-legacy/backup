@@ -5,8 +5,17 @@ include('backup.php');
 
 $objBackup = new Backup(true);
 $objBackup
-    ->setFolderPath('/backups/www')
-    ->setFoldersToBackup(array('/var/www'))
+    ->setFolderPath('/backups')
+    ->setFoldersToBackup(
+        array
+        (
+            '/etc/apache2/',
+            '/var/www' => array
+            (
+                'vhosts/test',
+            )
+        )
+    )
     ->setBackupCount(7)
     ->setDateFormat('d.m.Y')
     ->setTimeZone('Europe/Berlin')
