@@ -199,6 +199,9 @@ class Backup
         // create daily folder
         $this->_createBackupFolderForToday();
 
+        // create link to the daily folder
+        $this->_createLinkToBackupFolder();
+
         // create the backup
         $this->_backupFolders();
 
@@ -280,6 +283,28 @@ class Backup
 
         // create it only if it doesnt exists
         $this->_createFolder($strFolderPath);
+    }
+
+    protected function _createLinkToBackupFolder()
+    {
+        // path to the daily folder
+        $strFolderPath = $this->_strFolderPath . '/' . $this->_strDateToday;
+
+        // link path
+        $strLinkPath = $this->_strFolderPath . '/today';
+
+        // if there is allready a link
+        if(is_link($strLinkPath))
+        {
+            // delete link
+            if(!@unlink($strLinkPath))
+            {
+                $this->_throwException("Can't remove link!");
+            }
+        }
+
+        // create symlink
+        symlink($strFolderPath, $strLinkPath);
     }
 
     /**
